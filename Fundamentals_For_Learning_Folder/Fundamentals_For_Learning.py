@@ -37,6 +37,8 @@ def get_model(model, example_data=(1, 1, 28, 28)):
     model = model.to(device)
     model.layer_summary(example_data)
     model.apply(init_cnn)
+    num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('\n Number of parameters: %d' % num_params)
     return model, nn.CrossEntropyLoss()
 
 
@@ -53,9 +55,9 @@ def data_preparation(batch=128, resize=(224, 224)):
     test = data_test
 
     bs = batch
-    train_dl = DataLoader(train, batch_size=bs, shuffle=False, sampler=range(split1), num_workers=4, pin_memory=True)
-    val_dl = DataLoader(train, batch_size=bs, shuffle=False, sampler=range(split2), num_workers=4, pin_memory=True)
-    test_dl = DataLoader(test, batch_size=bs, shuffle=True, num_workers=4, pin_memory=True)
+    train_dl = DataLoader(train, batch_size=bs, shuffle=False, sampler=range(split1), num_workers=2, pin_memory=True)
+    val_dl = DataLoader(train, batch_size=bs, shuffle=False, sampler=range(split2), num_workers=2, pin_memory=True)
+    test_dl = DataLoader(test, batch_size=bs, shuffle=True, num_workers=2, pin_memory=True)
 
     print(len(train), len(test), len(train_dl), len(val_dl), len(test_dl))
 
@@ -85,6 +87,30 @@ class LeNet(nn.Module):
         for layer in self.net:
             X = layer(X)
             print(layer.__class__.__name__, 'output shape:\t', X.shape)
+
+
+class AlexNet(LeNet):
+
+    def __init__(self, num_classes=10):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.LazyConv2d(96, kernel_size=11, stride=4, padding=1),
+            nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.LazyConv2d(256, kernel_size=5, padding=2),
+            nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.LazyConv2d(384, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.LazyConv2d(384, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.LazyConv2d(256, kernel_size=3, padding=1),
+            nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.Flatten(),
+            nn.LazyLinear(4096),
+            nn.ReLU(), nn.Dropout(p=0.5),
+            nn.LazyLinear(4096),
+            nn.ReLU(), nn.Dropout(p=0.5),
+            nn.LazyLinear(num_classes)
+        )
 
 
 def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
