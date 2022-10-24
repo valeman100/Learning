@@ -1,22 +1,12 @@
 import torch
 from torch import nn, optim
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 import numpy as np
+import matplotlib.pyplot as plt
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-
-def init_cnn(module):
-    if type(module) == nn.Linear or type(module) == nn.Conv2d:
-        nn.init.xavier_uniform_(module.weight)
-
-
-def accuracy(X, y, model):
-    out = model(X.to(device)).argmax(axis=1).to('cpu')
-    compare = (out == y).type(torch.float32)
-    return compare.mean()
 
 
 class GeneralDataset(Dataset):
@@ -32,13 +22,18 @@ class GeneralDataset(Dataset):
         return {"X": self.X[idx], 'y': self.y[idx]}
 
 
+def init_cnn(module):
+    if type(module) == nn.Linear or type(module) == nn.Conv2d:
+        nn.init.xavier_uniform_(module.weight)
+
+
 def get_model(model, example_data=(1, 1, 28, 28)):
 
     model = model.to(device)
     model.layer_summary(example_data)
     model.apply(init_cnn)
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print('\n Number of parameters: %d' % num_params)
+    print(f'\nNumber of parameters: {num_params:d}')
     return model, nn.CrossEntropyLoss()
 
 
@@ -113,6 +108,29 @@ class AlexNet(LeNet):
         )
 
 
+def vgg_block(num_convs, out_channels):
+    layers = []
+    for _ in range(num_convs):
+        layers.append(nn.LazyConv2d(out_channels, kernel_size=3, padding=1))
+        layers.append(nn.ReLU())
+    layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+    return nn.Sequential(*layers)
+
+
+class VGG(LeNet):
+    def __init__(self, arch, num_classes=10):
+        super().__init__()
+        conv_blocks = []
+        in_channels = 1
+        for (num_convs, out_channels) in arch:
+            conv_blocks.append(vgg_block(num_convs, out_channels))
+        self.net = nn.Sequential(*conv_blocks, nn.Flatten(),
+                                 nn.LazyLinear(4096), nn.ReLU(), nn.Dropout(p=0.5),
+                                 nn.LazyLinear(4096), nn.ReLU(), nn.Dropout(p=0.5),
+                                 nn.LazyLinear(num_classes)
+                                 )
+
+
 def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
 
     opt = optim.SGD(model.parameters(), lr=lr)
@@ -154,6 +172,32 @@ def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
     return train_loss, val_loss, acc
 
 
+def after_training_plots(train_loss, val_loss, acc):
+
+    plt.plot(train_loss, label='training')
+    plt.plot(val_loss, label='validation')
+    plt.plot(acc, label='accuracy')
+
+    plt.legend()
+    plt.title('Losses')
+    plt.xlabel("Epochs")
+    plt.show()
+
+
+def accuracy(X, y, model):
+    out = model(X.to(device)).argmax(axis=1).to('cpu')
+    compare = (out == y).type(torch.float32)
+    return compare.mean()
+
+
+def model_test(X, y, model):
+
+    # X, y = next(iter(test_dl))
+    model.cuda()
+    out = model(X.cuda())
+    comparison = out.max(dim=1)[1].cpu() == y
+
+    print('prediction comparison:\n\n', comparison, '\n\nAccuracy = {}'.format(accuracy(X, y, model)))
 
 
 
