@@ -112,7 +112,7 @@ def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
                 iteration += 1
         acc.append(epoch_loss / iteration)
 
-        print("Epoch: {}, loss = {}, v_loss = {}, accuracy = {}".format(epoch, train_loss[-1], val_loss[-1], acc[-1]))
+        print("Epoch: {}, loss = {:.6}, v_loss = {:.6}, accuracy = {:.6}".format(epoch, train_loss[-1], val_loss[-1], acc[-1]))
 
     return train_loss, val_loss, acc
 
