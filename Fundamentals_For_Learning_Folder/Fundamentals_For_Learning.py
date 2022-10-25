@@ -59,19 +59,10 @@ def data_preparation(batch=128, resize=(224, 224)):
     return train_dl, val_dl, test_dl
 
 
-class LeNet(nn.Module):
-    def __init__(self, num_classes=10):
+class Classifier(nn.Module):
+    def __init__(self):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.LazyConv2d(6, kernel_size=5, padding=2),
-            nn.Sigmoid(), nn.AvgPool2d(kernel_size=2, stride=2),
-            nn.LazyConv2d(16, kernel_size=5),
-            nn.Sigmoid(), nn.AvgPool2d(kernel_size=2, stride=2),
-            nn.Flatten(),
-            nn.LazyLinear(120), nn.Sigmoid(),
-            nn.LazyLinear(84), nn.Sigmoid(),
-            nn.LazyLinear(num_classes)
-        )
+        self.net = None
 
     def forward(self, X):
         return self.net(X)
@@ -82,53 +73,6 @@ class LeNet(nn.Module):
         for layer in self.net:
             X = layer(X)
             print(layer.__class__.__name__, 'output shape:\t', X.shape)
-
-
-class AlexNet(LeNet):
-
-    def __init__(self, num_classes=10):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.LazyConv2d(96, kernel_size=11, stride=4, padding=1),
-            nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.LazyConv2d(256, kernel_size=5, padding=2),
-            nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.LazyConv2d(384, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.LazyConv2d(384, kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.LazyConv2d(256, kernel_size=3, padding=1),
-            nn.ReLU(), nn.MaxPool2d(kernel_size=3, stride=2),
-            nn.Flatten(),
-            nn.LazyLinear(4096),
-            nn.ReLU(), nn.Dropout(p=0.5),
-            nn.LazyLinear(4096),
-            nn.ReLU(), nn.Dropout(p=0.5),
-            nn.LazyLinear(num_classes)
-        )
-
-
-def vgg_block(num_convs, out_channels):
-    layers = []
-    for _ in range(num_convs):
-        layers.append(nn.LazyConv2d(out_channels, kernel_size=3, padding=1))
-        layers.append(nn.ReLU())
-    layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
-    return nn.Sequential(*layers)
-
-
-class VGG(LeNet):
-    def __init__(self, arch, num_classes=10):
-        super().__init__()
-        conv_blocks = []
-        in_channels = 1
-        for (num_convs, out_channels) in arch:
-            conv_blocks.append(vgg_block(num_convs, out_channels))
-        self.net = nn.Sequential(*conv_blocks, nn.Flatten(),
-                                 nn.LazyLinear(4096), nn.ReLU(), nn.Dropout(p=0.5),
-                                 nn.LazyLinear(4096), nn.ReLU(), nn.Dropout(p=0.5),
-                                 nn.LazyLinear(num_classes)
-                                 )
 
 
 def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
