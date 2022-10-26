@@ -28,11 +28,19 @@ def init_cnn(module):
         nn.init.xavier_uniform_(module.weight)
 
 
+def layer_summary(model, X_shape):
+    X = torch.randn(*X_shape).to(device)
+    print('X', 'output shape:\t', X.shape)
+    for layer in model.net:
+        X = layer(X)
+        print(layer.__class__.__name__, 'output shape:\t', X.shape)
+
+
 def get_model(model, example_data=(1, 1, 28, 28)):
     print("\n1")
     model = model.to(device)
     print("\n1")
-    model.layer_summary(example_data)
+    layer_summary(model, example_data)
     print("\n1")
     model.apply(init_cnn)
 
@@ -71,13 +79,7 @@ class Classifier(nn.Module):
     def forward(self, X):
         return self.net(X)
 
-    def layer_summary(self, X_shape):
-        X = torch.randn(*X_shape).to(device)
-        print('X', 'output shape:\t', X.shape)
-        for layer in self.net:
-            X = layer(X)
-            print(layer, '\n')
-            print(layer.__class__.__name__, 'output shape:\t', X.shape)
+
 
 
 def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
