@@ -29,7 +29,7 @@ def init_cnn(module):
 
 
 def get_model(model, example_data=(1, 1, 28, 28)):
-
+    print("\n1")
     model = model.to(device)
     print("\n1")
     model.layer_summary(example_data)
