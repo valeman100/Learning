@@ -31,19 +31,17 @@ def init_cnn(module):
 def layer_summary(model, X_shape):
     X = torch.randn(*X_shape).to(device)
     print('X', 'output shape:\t', X.shape)
-    print("\n1")
     for layer in model.net:
         X = layer(X)
-        print("\n1")
         print(layer.__class__.__name__, 'output shape:\t', X.shape)
 
 
 def get_model(model, example_data=(1, 1, 28, 28)):
-    print("\n1")
+    print("\nmodel")
     model = model.to(device)
-    print("\n1")
+    print("\ncuda")
     layer_summary(model, example_data)
-    print("\n1")
+    print("\nsummary")
     model.apply(init_cnn)
 
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
