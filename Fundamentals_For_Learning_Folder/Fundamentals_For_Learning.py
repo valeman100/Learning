@@ -31,8 +31,10 @@ def init_cnn(module):
 def layer_summary(model, X_shape):
     X = torch.randn(*X_shape).to(device)
     print('X', 'output shape:\t', X.shape)
+    print("\n1")
     for layer in model.net:
         X = layer(X)
+        print("\n1")
         print(layer.__class__.__name__, 'output shape:\t', X.shape)
 
 
