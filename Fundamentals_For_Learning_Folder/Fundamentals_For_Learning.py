@@ -76,6 +76,7 @@ class Classifier(nn.Module):
         print('X', 'output shape:\t', X.shape)
         for layer in self.net:
             X = layer(X)
+            print(layer, '\n')
             print(layer.__class__.__name__, 'output shape:\t', X.shape)
 
 
