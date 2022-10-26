@@ -31,9 +31,11 @@ def init_cnn(module):
 def get_model(model, example_data=(1, 1, 28, 28)):
 
     model = model.to(device)
-    model.layer_summary(example_data)
-    model.apply(init_cnn)
     print("\n1")
+    model.layer_summary(example_data)
+    print("\n1")
+    model.apply(init_cnn)
+
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'\nNumber of parameters: {num_params:d}')
     return model, nn.CrossEntropyLoss()
