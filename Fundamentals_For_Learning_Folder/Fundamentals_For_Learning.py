@@ -28,20 +28,10 @@ def init_cnn(module):
         nn.init.xavier_uniform_(module.weight)
 
 
-def layer_summary(model, X_shape):
-    X = torch.randn(*X_shape).to(device)
-    print('X', 'output shape:\t', X.shape)
-    for layer in model.net:
-        X = layer(X)
-        print(layer.__class__.__name__, 'output shape:\t', X.shape)
-
-
 def get_model(model, example_data=(1, 1, 28, 28)):
     model = model.to(device)
-    layer_summary(model, example_data)
-    print("\nsummary1")
+    model.layer_summary(model, example_data)
     model.apply(init_cnn)
-    print("\nsummary2")
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'\nNumber of parameters: {num_params:d}')
     return model, nn.CrossEntropyLoss()
@@ -77,7 +67,12 @@ class Classifier(nn.Module):
     def forward(self, X):
         return self.net(X)
 
-
+    def layer_summary(self, X_shape):
+        X = torch.randn(*X_shape).to(device)
+        print('X', 'output shape:\t', X.shape)
+        for layer in self.net:
+            X = layer(X)
+            print(layer.__class__.__name__, 'output shape:\t', X.shape)
 
 
 def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
