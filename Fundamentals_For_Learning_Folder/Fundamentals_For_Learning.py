@@ -37,13 +37,11 @@ def layer_summary(model, X_shape):
 
 
 def get_model(model, example_data=(1, 1, 28, 28)):
-    print("\nmodel")
     model = model.to(device)
-    print("\ncuda")
     layer_summary(model, example_data)
-    print("\nsummary")
+    print("\nsummary1")
     model.apply(init_cnn)
-
+    print("\nsummary2")
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'\nNumber of parameters: {num_params:d}')
     return model, nn.CrossEntropyLoss()
