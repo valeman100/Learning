@@ -205,3 +205,65 @@ class ResNet(Classifier):
 class ResNet18(ResNet):
     def __init__(self, num_classes=10):
         super().__init__(((2, 64), (2, 128), (2, 256), (2, 512)), num_classes)
+
+
+class ResNeXtBlock(nn.Module):
+    def __init__(self, num_channels, groups, bot_mul, use_1x1conv=False, strides=1):
+        super().__init__()
+
+        # num_channels = c, bot_channels = b
+        bot_channels = int(round(num_channels * bot_mul))
+        self.conv1 = nn.LazyConv2d(bot_channels, kernel_size=1, stride=1)
+        self.conv2 = nn.LazyConv2d(bot_channels, kernel_size=3, stride=strides,
+                                   padding=1, groups=bot_channels//groups)
+        self.conv3 = nn.LazyConv2d(num_channels, kernel_size=1, stride=1)
+
+        self.bn1 = nn.LazyBatchNorm2d()
+        self.bn2 = nn.LazyBatchNorm2d()
+        self.bn3 = nn.LazyBatchNorm2d()
+
+        if use_1x1conv:
+            self.conv4 = nn.LazyConv2d(num_channels, kernel_size=1, stride=strides)
+            self.bn4 = nn.LazyBatchNorm2d()
+        else:
+            self.conv4 = None
+
+    def forward(self, X):
+        Y = F.relu(self.bn1(self.conv1(X)))
+        Y = F.relu(self.bn2(self.conv2(Y)))
+        Y = self.bn3(self.conv3(Y))
+        if self.conv4:
+            X = self.bn4(self.conv4(X))
+        return F.relu(Y + X)
+
+
+class ResNeXt(Classifier):
+    def __init__(self, arch, num_classes=10):
+        super().__init__()
+        self.net = nn.Sequential(self.b1())
+        for i, b in enumerate(arch):
+            # self.add_module("conv1", Conv2d(3, 16, 5, padding=2))
+            self.net.add_module(f'b{i+2}', self.block(*b, first_block=(i == 0)))
+        self.net.add_module("last", nn.Sequential(
+            nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten(), nn.LazyLinear(num_classes)))
+
+    def b1(self):
+        return nn.Sequential(
+            nn.LazyConv2d(64, kernel_size=7, stride=2, padding=3),
+            nn.LazyBatchNorm2d(), nn.ReLU(),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        )
+
+    def block(self, num_residuals, num_channels, first_block=False):
+        blk = []
+        for i in range(num_residuals):
+            if i == 0 and not first_block:
+                blk.append(ResNeXtBlock(num_channels, 16, 1, use_1x1conv=True, strides=2))
+            else:
+                blk.append(ResNeXtBlock(num_channels, 16, 1))
+        return nn.Sequential(*blk)
+
+
+class ResNeXt18(ResNeXt):
+    def __init__(self, num_classes=10):
+        super().__init__(((2, 64), (2, 128), (2, 256), (2, 512)), num_classes)
