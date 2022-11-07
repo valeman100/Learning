@@ -267,3 +267,53 @@ class ResNeXt(Classifier):
 class ResNeXt18(ResNeXt):
     def __init__(self, num_classes=10):
         super().__init__(((2, 64), (2, 128), (2, 256), (2, 512)), num_classes)
+
+
+def conv_block(num_channels):
+    return nn.Sequential(nn.LazyBatchNorm2d(), nn.ReLU(),
+                         nn.LazyConv2d(num_channels, kernel_size=3, padding=1))
+
+
+class DenseBlock(nn.Module):
+    def __init__(self, num_convs, num_channels) -> None:
+        super().__init__()
+        layer = []
+        for i in range(num_convs):
+            layer.append(conv_block(num_channels))
+        self.net = nn.Sequential(*layer)
+
+    def forward(self, X):
+        for blk in self.net:
+            Y = blk(X)
+            X = torch.cat((X, Y), dim=1)
+        return X
+
+
+def transition_block(num_channels):
+    return nn.Sequential(nn.LazyBatchNorm2d(), nn.ReLU(),
+                         nn.LazyConv2d(num_channels, kernel_size=1),
+                         nn.AvgPool2d(kernel_size=2, stride=2))
+
+
+class DenseNet(Classifier):
+
+    def b1(self):
+        return nn.Sequential(nn.LazyConv2d(64, kernel_size=7, stride=2, padding=3),
+                             nn.LazyBatchNorm2d(), nn.ReLU(),
+                             nn.MaxPool2d(kernel_size=3, stride=2, padding=1))
+
+    def __init__(self, num_channels=64, growth_rate=32, arch=(4, 4, 4, 4), num_classes=10) -> None:
+        super().__init__()
+        self.net = nn.Sequential(self.b1())
+        for i, num_convs in enumerate(arch):
+            self.net.add_module(f'dense_blk{i + 1}', DenseBlock(num_convs, growth_rate))
+            # number of out channels in the previous dense block
+            num_channels += num_convs * growth_rate
+            # transition layer halves the number of channels
+            if i != len(arch) - 1:
+                num_channels //= 2
+                self.net.add_module(f'tran_blk{i + 1}', transition_block(num_channels))
+        self.net.add_module('last', nn.Sequential(nn.LazyBatchNorm2d(), nn.ReLU(),
+                                                  nn.AdaptiveAvgPool2d((1, 1)), nn.Flatten(),
+                                                  nn.LazyLinear(num_classes)))
+
