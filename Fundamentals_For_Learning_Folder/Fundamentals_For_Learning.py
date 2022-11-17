@@ -9,6 +9,8 @@ from torch.utils.data import random_split
 import os, sys
 from google.colab import drive
 from typing import List, Tuple, Mapping , Union , Optional, Callable
+import pip
+
 
 '''
 !rm -r /content/Learning
@@ -185,8 +187,9 @@ def drive_packages(packages: List[str]=[]):
         # insert the path where python looks for packages
         sys.path.insert(0, nb_path)  # or append(nb_path)
         # The last three lines are what changes the path of the file.
-        cmd = !pip install --target=$nb_path $package
-        print(cmd)
+        pip.main(['install', '--target=$nb_path', package])
+
+        #!pip install --target=$nb_path $package
 
     sys.path.append('/content/gdrive/My Drive/Colab Notebooks/Packages')
 
