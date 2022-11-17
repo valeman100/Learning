@@ -10,6 +10,16 @@ import os, sys
 from google.colab import drive
 from typing import List, Tuple, Mapping , Union , Optional, Callable
 
+'''
+!rm -r /content/Learning
+!git clone https://github.com/valeman100/Learning.git
+import sys
+sys.path.append('/content/Learning/Fundamentals_For_Learning_Folder/') 
+import Fundamentals_For_Learning as FFL
+from torch import nn
+import torch
+'''
+
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -163,20 +173,22 @@ def model_test(X, y, model):
     print('prediction comparison:\n\n', comparison, '\n\nAccuracy = {}'.format(accuracy(X, y, model)))
 
 
-def drive_packages(packages: [str, ...] = None):
+def drive_packages(packages: List[str]=[]):
     drive.mount('/content/gdrive')
 
-    if packages is not None:
-        for package in packages:
-            nb_path = '/content/notebooks'
-            # create in the folder Colab Notebooks the simulated link to the folder notebooks
-            os.symlink('/content/gdrive/MyDrive/Colab Notebooks/Packages', nb_path)
-            # insert the path where python looks for packages
-            sys.path.insert(0, nb_path)  # or append(nb_path)
-            # The last three lines are what changes the path of the file.
-            !pip install --target=$nb_path $package
+    #if isinstance(packages, list):
+    for package in packages:
+        print('\n', package)
+        nb_path = '/content/notebooks'
+        # create in the folder Colab Notebooks the simulated link to the folder notebooks
+        os.symlink('/content/gdrive/MyDrive/Colab Notebooks/Packages', nb_path)
+        # insert the path where python looks for packages
+        sys.path.insert(0, nb_path)  # or append(nb_path)
+        # The last three lines are what changes the path of the file.
+        !pip install --target=$nb_path $package
 
     sys.path.append('/content/gdrive/My Drive/Colab Notebooks/Packages')
+
 
 
 
