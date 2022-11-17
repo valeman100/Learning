@@ -5,6 +5,10 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 import numpy as np
 import matplotlib.pyplot as plt
+from torch.utils.data import random_split
+import os, sys
+from google.colab import drive
+from typing import List, Tuple, Mapping , Union , Optional, Callable
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -35,6 +39,21 @@ def get_model(model, example_data=(1, 1, 28, 28)):
     num_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print(f'\nNumber of parameters: {num_params:d}')
     return model, nn.CrossEntropyLoss()
+
+
+def general_data_prep(dataset, batch_size=16, transformations=None):
+
+    length = len(dataset)
+    train_len, test_len, validation_len = int(length * 0.7), int(length * 0.2), int(length * 0.1)
+    train, test, validation = random_split(dataset, (train_len, test_len, validation_len))
+
+    print('Train length: {}, test length:{} Validation length:{}, '.format(len(train), len(test), len(validation)))
+
+    train_dataloader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True)
+    test_dataloader = DataLoader(test, batch_size=batch_size, shuffle=True, drop_last=True)
+    validation_dataloader = DataLoader(validation, batch_size=batch_size, shuffle=True, drop_last=True)
+
+    return train_dataloader, test_dataloader, validation_dataloader
 
 
 def data_preparation(batch=128, resize=(224, 224)):
@@ -142,6 +161,27 @@ def model_test(X, y, model):
     comparison = out.max(dim=1)[1].cpu() == y
 
     print('prediction comparison:\n\n', comparison, '\n\nAccuracy = {}'.format(accuracy(X, y, model)))
+
+
+def drive_packages(packages: [str, ...] = None):
+    drive.mount('/content/gdrive')
+
+    if packages is not None:
+        for package in packages:
+            nb_path = '/content/notebooks'
+            # create in the folder Colab Notebooks the simulated link to the folder notebooks
+            os.symlink('/content/gdrive/MyDrive/Colab Notebooks/Packages', nb_path)
+            # insert the path where python looks for packages
+            sys.path.insert(0, nb_path)  # or append(nb_path)
+            # The last three lines are what changes the path of the file.
+            !pip install --target=$nb_path $package
+
+    sys.path.append('/content/gdrive/My Drive/Colab Notebooks/Packages')
+
+
+
+
+
 
 
 
