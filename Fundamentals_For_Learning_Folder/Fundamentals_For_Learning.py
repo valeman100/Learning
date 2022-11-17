@@ -185,7 +185,8 @@ def drive_packages(packages: List[str]=[]):
         # insert the path where python looks for packages
         sys.path.insert(0, nb_path)  # or append(nb_path)
         # The last three lines are what changes the path of the file.
-        !pip install --target=$nb_path $package
+        cmd = !pip install --target=$nb_path $package
+        print(cmd)
 
     sys.path.append('/content/gdrive/My Drive/Colab Notebooks/Packages')
 
