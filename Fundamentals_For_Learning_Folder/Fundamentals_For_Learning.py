@@ -6,9 +6,9 @@ from torchvision import datasets, transforms
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import random_split
-import os, sys
+import os,sys
 from google.colab import drive
-from typing import List, Tuple, Mapping , Union , Optional, Callable
+from typing import List, Tuple, Mapping, Union, Optional, Callable
 import pip
 
 
@@ -57,6 +57,8 @@ def general_data_prep(dataset, batch_size=16, transformations=None):
 
     length = len(dataset)
     train_len, test_len, validation_len = int(length * 0.7), int(length * 0.2), int(length * 0.1)
+    if train_len + test_len + validation_len != length:
+        train_len += length - train_len - test_len - validation_len
     train, test, validation = random_split(dataset, (train_len, test_len, validation_len))
 
     print('Train length: {}, test length:{} Validation length:{}, '.format(len(train), len(test), len(validation)))
@@ -68,6 +70,7 @@ def general_data_prep(dataset, batch_size=16, transformations=None):
     return train_dataloader, test_dataloader, validation_dataloader
 
 
+# specific for FashionMnist
 def data_preparation(batch=128, resize=(224, 224)):
 
     transform = transforms.Compose([transforms.ToTensor(), transforms.Resize(resize), transforms.Normalize((0.5,), (0.5,))])
@@ -104,6 +107,10 @@ class Classifier(nn.Module):
         for layer in self.net:
             X = layer(X)
             print(layer.__class__.__name__, 'output shape:\t', X.shape)
+
+
+class Trainer:
+    pass
 
 
 def fit(train_dl, val_dl, test_dl, loss_f, model, lr=0.1, epochs=15):
@@ -175,21 +182,21 @@ def model_test(X, y, model):
     print('prediction comparison:\n\n', comparison, '\n\nAccuracy = {}'.format(accuracy(X, y, model)))
 
 
-def drive_packages(packages: List[str]=[]):
+def drive_packages(packages):
     drive.mount('/content/gdrive')
 
-    #if isinstance(packages, list):
+    # if isinstance(packages, list):
     for package in packages:
         print('\n', package)
         nb_path = '/content/notebooks'
         # create in the folder Colab Notebooks the simulated link to the folder notebooks
-        os.symlink('/content/gdrive/MyDrive/Colab Notebooks/Packages', nb_path)
+        # FFL.os.symlink('/content/gdrive/MyDrive/Colab Notebooks/Packages', nb_path)
         # insert the path where python looks for packages
         sys.path.insert(0, nb_path)  # or append(nb_path)
         # The last three lines are what changes the path of the file.
-        pip.main(['install', '--target=$nb_path', package])
+        pip.main(['install', '--target='+nb_path, package])
 
-        #!pip install --target=$nb_path $package
+        # !pip install --target=$nb_path $package
 
     sys.path.append('/content/gdrive/My Drive/Colab Notebooks/Packages')
 
