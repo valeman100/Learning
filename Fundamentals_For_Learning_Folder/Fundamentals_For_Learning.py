@@ -63,9 +63,9 @@ def general_data_prep(dataset, batch_size=16, transformations=None):
 
     print('Train length: {}, test length:{} Validation length:{}, '.format(len(train), len(test), len(validation)))
 
-    train_dataloader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=4, drop_last=True)
-    test_dataloader = DataLoader(test, batch_size=batch_size, shuffle=True, drop_last=True)
-    validation_dataloader = DataLoader(validation, batch_size=batch_size, shuffle=True, drop_last=True)
+    train_dataloader = DataLoader(train, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True)
+    test_dataloader = DataLoader(test, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True)
+    validation_dataloader = DataLoader(validation, batch_size=batch_size, shuffle=True, num_workers=2, drop_last=True)
 
     return train_dataloader, test_dataloader, validation_dataloader
 
